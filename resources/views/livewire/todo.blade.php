@@ -19,13 +19,23 @@
             <ul class="todo-list">
                 @foreach($this->filteredTodos as $todo)
 
-                    <li class="todo {{ $todo['completed'] ? 'completed' : '' }}" wire:key="{{ $todo['id'] }}">
+                    <li
+                        class="todo {{ $todo['completed'] ? 'completed' : '' }} {{ $todo == $editedTodo ? 'editing' : '' }}"
+                        wire:key="{{ $todo['id'] }}"
+                    >
                         <div class="view">
                             <input type="checkbox" class="toggle" wire:model.live="todos.{{array_search($todo, $todos)}}.completed">
-                            <label>{{ $todo['title'] }}</label>
+                            <label @dblclick="$wire.editTodo({{ $todo['id'] }})">{{ $todo['title'] }}</label>
                             <button class="destroy" wire:click.prevent="removeTodo({{ $todo['id'] }})"></button>
                         </div>
-                        <input type="text" class="edit">
+                        <input
+                            class="edit"
+                            type="text"
+                            wire:model.live="currentUpdating"
+                            @blur="$wire.doneEdit"
+                            @keyup.enter="$wire.doneEdit"
+                            @keyup.esc="$wire.cancelEdit"
+                        >
                     </li>
                 @endforeach
             </ul>

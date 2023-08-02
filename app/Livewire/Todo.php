@@ -17,6 +17,10 @@ class Todo extends Component
 
     public bool $completeAll = false;
 
+    public array $editedTodo = [];
+
+    public string $currentUpdating = '';
+
     #[Url]
     public string $visibility = 'all';
 
@@ -35,18 +39,7 @@ class Todo extends Component
         $this->form->reset('value');
     }
 
-    #[Computed]
-    public function allTodoCount(): int
-    {
-        return $this->all->count();
-    }
-
-    #[Computed]
-    public function remaining()
-    {
-        return $this->all->filter(fn($todo) => $todo['completed'] == false)->count();
-    }
-
+    // Hooks
     public function updatedCompleteAll($value)
     {
         $this->todos = $this->all->map(function ($todo) use ($value) {
@@ -58,6 +51,7 @@ class Todo extends Component
         $this->filteredTodos();
     }
 
+    // events functions
     public function completeTodo(int $id): void
     {
         $this->todos = $this->all->map(function ($todo) use ($id) {
@@ -74,7 +68,34 @@ class Todo extends Component
         $this->todos = $this->all()->filter(fn($todo) => $todo['id'] != $id)->toArray();
     }
 
+    public function editTodo(int $todoId): void
+    {
+        $this->editedTodo = $this->getTodoById($todoId);
+        $this->currentUpdating = $this->editedTodo['title'];
+    }
 
+    public function doneEdit(): void
+    {
+        $this->todos = $this->all()->map(function ($td) {
+            if ($this->editedTodo == $td) {
+                $td['title'] = str().trim($this->currentUpdating);
+            }
+            return $td;
+        })->toArray();
+
+
+        $this->editedTodo = [];
+        $this->currentUpdating = '';
+    }
+
+    public function cancelEdit(int $todoId)
+    {
+        $this->editedTodo = [];
+        $this->currentUpdating = '';
+    }
+
+
+    // Computed properties
 
     #[Computed]
     public function all(): Collection
@@ -91,6 +112,25 @@ class Todo extends Component
             'completed' => collect($this->todos)->filter(fn($todo) => $todo['completed'] == true)->toArray(),
         };
     }
+
+    #[Computed]
+    public function allTodoCount(): int
+    {
+        return $this->all->count();
+    }
+
+    #[Computed]
+    public function remaining()
+    {
+        return $this->all->filter(fn($todo) => $todo['completed'] == false)->count();
+    }
+
+    #[Computed]
+    public function getTodoById(int $todoId): array
+    {
+        return $this->all()->where('id', $todoId)->first();
+    }
+
 
     public function render()
     {
